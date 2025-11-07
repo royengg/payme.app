@@ -1,0 +1,27 @@
+{
+  "name": "payme.disc",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "build:api": "tsc -b apps/api",
+    "build:bot": "tsc -b apps/bot",
+    "clean": "tsc -b --clean"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@types/dotenv": "^6.1.1",
+    "dotenv": "^17.2.3"
+  }
+}

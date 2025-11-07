@@ -1,0 +1,9 @@
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "files": [],
+  "references": [
+    { "path": "apps/api" },
+    { "path": "apps/bot" },
+    { "path": "packages/db" }
+  ]
+}
