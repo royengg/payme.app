@@ -1,10 +1,3 @@
-/**
- * PayPal Invoicing API Service
- * 
- * Handles all PayPal API interactions for invoice creation and management.
- * Uses OAuth 2.0 Bearer token authentication.
- */
-
 interface CreateInvoiceParams {
   invoiceId: string;
   amount: number;
@@ -32,9 +25,6 @@ class PayPalService {
       : "https://api-m.sandbox.paypal.com";
   }
 
-  /**
-   * Get OAuth access token (cached until expiry)
-   */
   private async getAccessToken(): Promise<string> {
     if (this.accessToken && Date.now() < this.tokenExpiry) {
       return this.accessToken;
@@ -64,14 +54,11 @@ class PayPalService {
 
     const data = await response.json() as { access_token: string; expires_in: number };
     this.accessToken = data.access_token;
-    this.tokenExpiry = Date.now() + (data.expires_in * 1000) - 60000; // 1 min buffer
+    this.tokenExpiry = Date.now() + (data.expires_in * 1000) - 60000; 
 
     return this.accessToken;
   }
 
-  /**
-   * Create a draft invoice
-   */
   async createInvoice(params: CreateInvoiceParams): Promise<PayPalInvoice> {
     const token = await this.getAccessToken();
 
@@ -122,7 +109,6 @@ class PayPalService {
 
     const data = await response.json() as any;
 
-    // Extract ID from HREF if not present explicitly (PayPal Create API returns only a link)
     let id = data.id;
     if (!id && data.href) {
       const parts = data.href.split("/");
@@ -133,7 +119,6 @@ class PayPalService {
        throw new Error("Failed to extract invoice ID from PayPal response");
     }
 
-    // Fetch full invoice details to get the Payer View URL
     try {
       const details = await this.getInvoice(id);
       const payerLink = details.detail?.metadata?.recipient_view_url 
@@ -146,7 +131,6 @@ class PayPalService {
       };
     } catch (error) {
        console.error("Failed to fetch invoice details:", error);
-       // Fallback to constructed link
        return {
          id,
          href: `https://www.sandbox.paypal.com/invoice/p/${id}`,
@@ -155,9 +139,6 @@ class PayPalService {
     }
   }
 
-  /**
-   * Send a draft invoice to the recipient
-   */
   async sendInvoice(paypalInvoiceId: string): Promise<void> {
     const token = await this.getAccessToken();
 
@@ -182,9 +163,6 @@ class PayPalService {
     }
   }
 
-  /**
-   * Delete a draft invoice
-   */
   async deleteInvoice(paypalInvoiceId: string): Promise<void> {
     const token = await this.getAccessToken();
 
@@ -199,7 +177,6 @@ class PayPalService {
     );
 
     if (!response.ok) {
-      // Ignore 404s (already deleted)
       if (response.status === 404) return;
       
       const error = await response.text();
@@ -207,9 +184,6 @@ class PayPalService {
     }
   }
 
-  /**
-   * Cancel an invoice
-   */
   async cancelInvoice(paypalInvoiceId: string): Promise<void> {
     const token = await this.getAccessToken();
 
@@ -230,7 +204,6 @@ class PayPalService {
     );
 
     if (!response.ok) {
-      // Ignore 404s or 422s (already cancelled/invalid state)
       if (response.status === 404 || response.status === 422) return;
 
       const error = await response.text();
@@ -238,9 +211,6 @@ class PayPalService {
     }
   }
 
-  /**
-   * Get invoice details including payment link
-   */
   async getInvoice(paypalInvoiceId: string): Promise<any> {
     const token = await this.getAccessToken();
 

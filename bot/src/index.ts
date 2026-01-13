@@ -3,8 +3,8 @@ import { invoiceCommand } from "./commands/invoice";
 import { templateCommand } from "./commands/template";
 import { setupCommand } from "./commands/setup";
 import { paylinkCommand } from "./commands/paylink";
+import { clientCommand } from "./commands/client";
 
-// Extend Client type to include commands collection
 declare module "discord.js" {
   interface Client {
     commands: Collection<string, any>;
@@ -18,21 +18,17 @@ const client = new Client({
   ]
 });
 
-// Initialize commands collection
 client.commands = new Collection();
 
-// Register commands
-const commands = [invoiceCommand, templateCommand, setupCommand, paylinkCommand];
+const commands = [invoiceCommand, templateCommand, setupCommand, paylinkCommand, clientCommand];
 commands.forEach(cmd => {
   client.commands.set(cmd.data.name, cmd);
 });
 
-// Ready event
 client.once("clientReady", async () => {
   console.log(`🤖 Logged in as ${client.user?.tag}`);
   console.log(`📊 Serving ${client.guilds.cache.size} server(s)`);
   
-  // Register slash commands
   const rest = new REST().setToken(process.env.DISCORD_TOKEN!);
   
   try {
@@ -49,9 +45,7 @@ client.once("clientReady", async () => {
   }
 });
 
-// Interaction handler
 client.on("interactionCreate", async (interaction) => {
-  // Handle Slash Commands
   if (interaction.isChatInputCommand()) {
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
@@ -71,9 +65,7 @@ client.on("interactionCreate", async (interaction) => {
     return;
   }
 
-  // Handle Buttons
   if (interaction.isButton()) {
-    // Route invoice-related buttons to invoice command
     if (["delete_all", "confirm_delete", "cancel_delete"].includes(interaction.customId)) {
       try {
         await invoiceCommand.execute(interaction as any);
@@ -87,7 +79,6 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
-// Guild join event - register guild in database
 client.on("guildCreate", async (guild) => {
   console.log(`📥 Joined new guild: ${guild.name} (${guild.id})`);
   
@@ -102,7 +93,6 @@ client.on("guildCreate", async (guild) => {
   }
 });
 
-// Login
 const token = process.env.DISCORD_TOKEN;
 if (!token) {
   console.error("❌ DISCORD_TOKEN is not set in environment variables");

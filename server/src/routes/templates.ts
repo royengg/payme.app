@@ -5,10 +5,8 @@ import { createTemplateSchema, formatZodError } from "../validators/schemas";
 
 const router = Router();
 
-// Create a new template
 router.post("/", async (req, res) => {
   try {
-    // Validate with Zod
     const validation = createTemplateSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({ error: formatZodError(validation.error) });
@@ -37,7 +35,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-// List templates for a user in a guild
 router.get("/guild/:guildId/user/:userId", async (req, res) => {
   try {
     const { guildId, userId } = req.params;
@@ -54,7 +51,6 @@ router.get("/guild/:guildId/user/:userId", async (req, res) => {
   }
 });
 
-// Get a template by name
 router.get("/guild/:guildId/user/:userId/name/:name", async (req, res) => {
   try {
     const { guildId, userId, name } = req.params;
@@ -74,7 +70,6 @@ router.get("/guild/:guildId/user/:userId/name/:name", async (req, res) => {
   }
 });
 
-// Delete a template
 router.delete("/:id", async (req, res) => {
   try {
     await prisma.template.delete({

@@ -4,7 +4,6 @@ import { sendPaymentNotification } from "../services/discord";
 
 const router = Router();
 
-// PayPal webhook endpoint
 router.post("/paypal", async (req, res) => {
   try {
     const event = req.body;
@@ -12,7 +11,6 @@ router.post("/paypal", async (req, res) => {
     console.log("PayPal webhook received:", event.event_type);
     console.log("Webhook payload:", JSON.stringify(event, null, 2));
 
-    // Handle invoice paid event
     if (event.event_type === "INVOICING.INVOICE.PAID" || event.event_type === "INVOICES.INVOICE.PAID") {
       const paypalInvoiceId = event.resource?.invoice?.id || event.resource?.id;
       
@@ -21,7 +19,6 @@ router.post("/paypal", async (req, res) => {
         return res.status(200).send("OK");
       }
 
-      // Find and update our invoice
       const invoice = await prisma.invoice.findUnique({
         where: { paypalInvoiceId },
         include: { 
@@ -35,7 +32,6 @@ router.post("/paypal", async (req, res) => {
         return res.status(200).send("OK");
       }
 
-      // Update invoice status
       await prisma.invoice.update({
         where: { id: invoice.id },
         data: { 
@@ -46,7 +42,6 @@ router.post("/paypal", async (req, res) => {
 
       console.log(`Invoice ${invoice.id} marked as PAID`);
 
-      // Send Discord notification via webhook
       if (invoice.guild.webhookUrl) {
         await sendPaymentNotification({
           webhookUrl: invoice.guild.webhookUrl,
@@ -60,7 +55,6 @@ router.post("/paypal", async (req, res) => {
       }
     }
 
-    // Handle invoice cancelled event
     if (event.event_type === "INVOICING.INVOICE.CANCELLED" || event.event_type === "INVOICES.INVOICE.CANCELLED") {
       const paypalInvoiceId = event.resource?.invoice?.id || event.resource?.id;
       
@@ -73,11 +67,9 @@ router.post("/paypal", async (req, res) => {
       }
     }
 
-    // Always respond 200 to acknowledge receipt
     res.status(200).send("OK");
   } catch (error) {
     console.error("Webhook processing error:", error);
-    // Still return 200 to prevent PayPal retries
     res.status(200).send("OK");
   }
 });

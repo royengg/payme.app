@@ -47,7 +47,6 @@ export const paylinkCommand = {
     const currency = interaction.options.getString("currency")?.toUpperCase() || "USD";
     const client = interaction.options.getUser("client");
 
-    // Check if user has PayPal.me username configured
     const userRes = await getUser(interaction.user.id, interaction.guildId!);
     if (userRes.error || !userRes.data) {
       return interaction.editReply({
@@ -62,15 +61,12 @@ export const paylinkCommand = {
       });
     }
 
-    // Generate PayPal.me link
-    // Format: paypal.me/username/amount
     const paypalMeUrl = `https://paypal.me/${user.paypalMeUsername}/${amount}${currency}`;
     const displayUrl = `paypal.me/${user.paypalMeUsername}/${amount}`;
 
-    // Build the embed
     const embed = new EmbedBuilder()
       .setTitle("💳 Payment Link Generated")
-      .setColor(0x0070ba) // PayPal blue
+      .setColor(0x0070ba)
       .setDescription(`Share this link to receive **${currency} ${amount.toFixed(2)}**`)
       .addFields(
         { name: "📝 Description", value: description, inline: false },
@@ -79,7 +75,6 @@ export const paylinkCommand = {
       .setFooter({ text: "Powered by PayPal.me" })
       .setTimestamp();
 
-    // Create button for easy access
     const row = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
         new ButtonBuilder()
@@ -89,7 +84,6 @@ export const paylinkCommand = {
           .setEmoji("💰")
       );
 
-    // If client is specified, DM them
     if (client) {
       try {
         const clientEmbed = new EmbedBuilder()

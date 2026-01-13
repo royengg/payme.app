@@ -77,7 +77,6 @@ export const setupCommand = {
   }
 };
 
-// Helper to ensure guild is registered
 async function ensureGuild(interaction: ChatInputCommandInteraction) {
   if (!interaction.guildId || !interaction.guild) return;
   
@@ -92,7 +91,6 @@ async function handlePaypal(interaction: ChatInputCommandInteraction) {
 
   const email = interaction.options.getString("email", true);
 
-  // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return interaction.editReply({
@@ -100,10 +98,8 @@ async function handlePaypal(interaction: ChatInputCommandInteraction) {
     });
   }
 
-  // Ensure guild exists first
   await ensureGuild(interaction);
 
-  // Register/update user
   const result = await registerUser({
     id: interaction.user.id,
     guildId: interaction.guildId!,
@@ -134,7 +130,6 @@ async function handleCurrency(interaction: ChatInputCommandInteraction) {
 
   const currency = interaction.options.getString("code", true).toUpperCase();
 
-  // Common currency codes
   const validCurrencies = ["USD", "EUR", "GBP", "CAD", "AUD", "INR", "JPY", "CNY", "BRL", "MXN", "SGD", "HKD", "NZD", "CHF", "SEK", "NOK", "DKK", "PLN", "CZK", "HUF"];
   
   if (!validCurrencies.includes(currency) && currency.length !== 3) {
@@ -143,10 +138,8 @@ async function handleCurrency(interaction: ChatInputCommandInteraction) {
     });
   }
 
-  // Ensure guild exists first
   await ensureGuild(interaction);
 
-  // Use registerUser (upsert) to handle both create and update
   const result = await registerUser({
     id: interaction.user.id,
     guildId: interaction.guildId!,
@@ -169,7 +162,6 @@ async function handlePaypalMe(interaction: ChatInputCommandInteraction) {
 
   const username = interaction.options.getString("username", true);
 
-  // Validate username format (alphanumeric only)
   const usernameRegex = /^[a-zA-Z0-9]+$/;
   if (!usernameRegex.test(username)) {
     return interaction.editReply({
@@ -183,10 +175,8 @@ async function handlePaypalMe(interaction: ChatInputCommandInteraction) {
     });
   }
 
-  // Ensure guild exists first
   await ensureGuild(interaction);
 
-  // Use registerUser (upsert) to handle both create and update
   const result = await registerUser({
     id: interaction.user.id,
     guildId: interaction.guildId!,
@@ -222,14 +212,12 @@ async function handlePaypalMe(interaction: ChatInputCommandInteraction) {
 async function handleWebhook(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply({ flags: ["Ephemeral"] });
 
-  // Check if user has admin permissions
   if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
     return interaction.editReply({
       content: "❌ Only server administrators can configure the webhook."
     });
   }
 
-  // Check if bot has ManageWebhooks permission
   if (!interaction.guild?.members.me?.permissions.has(PermissionFlagsBits.ManageWebhooks)) {
     return interaction.editReply({
       content: "❌ I need the **Manage Webhooks** permission to create the alert."
@@ -245,20 +233,16 @@ async function handleWebhook(interaction: ChatInputCommandInteraction) {
   }
 
   try {
-    // Create the webhook
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const webhook = await (targetChannel as any).createWebhook({
       name: "PayMe Alerts",
-      avatar: "https://i.imgur.com/4M34hi2.png", // Optional: Add a logo
+      avatar: "https://i.imgur.com/4M34hi2.png", 
     });
 
-    // Register guild first if needed
     await ensureGuild(interaction);
 
     const result = await updateGuildWebhook(interaction.guildId!, webhook.url);
 
     if (result.error) {
-      // Clean up webhook if DB save fails
       await webhook.delete();
       return interaction.editReply({
         content: `❌ Failed to save webhook: ${result.error}`
@@ -302,7 +286,6 @@ async function handleStatus(interaction: ChatInputCommandInteraction) {
       value: "Use `/setup paypal your@email.com` to configure your PayPal business email."
     });
   } else {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = userRes.data as any;
     embed.addFields(
       { 

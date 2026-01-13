@@ -1,9 +1,3 @@
-/**
- * Discord Notification Service
- * 
- * Sends payment notifications to Discord channels via webhooks.
- */
-
 interface PaymentNotificationParams {
   webhookUrl: string;
   invoiceId: string;
@@ -14,15 +8,12 @@ interface PaymentNotificationParams {
   clientDiscordId: string;
 }
 
-/**
- * Send a payment notification to a Discord channel via webhook
- */
 export async function sendPaymentNotification(params: PaymentNotificationParams): Promise<void> {
   const { webhookUrl, invoiceId, amount, currency, description, userId, clientDiscordId } = params;
 
   const embed = {
     title: "💰 Payment Received!",
-    color: 0x00ff00, // Green
+    color: 0x00ff00, 
     fields: [
       {
         name: "Invoice ID",
@@ -75,9 +66,6 @@ export async function sendPaymentNotification(params: PaymentNotificationParams)
   }
 }
 
-/**
- * Send an invoice created notification
- */
 export async function sendInvoiceCreatedNotification(params: {
   webhookUrl: string;
   invoiceId: string;
@@ -128,7 +116,7 @@ export async function sendInvoiceCreatedNotification(params: {
 
   const embed = {
     title: "📄 Invoice Created",
-    color: 0x5865f2, // Discord blurple
+    color: 0x5865f2, 
     fields,
     timestamp: new Date().toISOString(),
     footer: {

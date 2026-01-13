@@ -7,25 +7,24 @@ datasource db {
   provider = "postgresql"
 }
 
-// Discord server configuration
 model Guild {
-  id        String     @id // Discord Guild ID
+  id        String     @id 
   name      String
-  webhookUrl String?   // Discord webhook for payment notifications
+  webhookUrl String?   
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   users     User[]
   invoices  Invoice[]
   templates Template[]
+  clients   Client[]
 }
 
-// Users who create invoices
 model User {
-  id          String     @id // Discord User ID
+  id          String     @id 
   email       String?
-  paypalEmail String?    // PayPal business email for invoicing
-  paypalMeUsername String?  // PayPal.me username for quick payment links
-  currency    String     @default("USD") // Default currency
+  paypalEmail String?    
+  paypalMeUsername String?  
+  currency    String     @default("USD") 
   guildId     String
   guild       Guild      @relation(fields: [guildId], references: [id], onDelete: Cascade)
   invoices    Invoice[]
@@ -34,9 +33,26 @@ model User {
   updatedAt   DateTime   @updatedAt
 
   @@unique([id, guildId])
+  clients     Client[]
 }
 
-// Invoice records
+model Client {
+  id        String   @id @default(cuid())
+  userId    String   
+  guildId   String
+  discordId String   
+  name      String   
+  email     String   
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guild     Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, guildId, discordId]) 
+}
+
 model Invoice {
   id              String        @id @default(cuid())
   paypalInvoiceId String?       @unique
@@ -45,8 +61,8 @@ model Invoice {
   currency        String        @default("USD")
   description     String
   status          InvoiceStatus @default(DRAFT)
-  clientDiscordId String        // Client's Discord user ID
-  clientEmail     String?       // Client's email for PayPal
+  clientDiscordId String        
+  clientEmail     String?       
   userId          String
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   guildId         String
@@ -60,7 +76,6 @@ model Invoice {
   @@index([status])
 }
 
-// Reusable invoice templates
 model Template {
   id          String   @id @default(cuid())
   name        String

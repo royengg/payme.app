@@ -34,7 +34,6 @@ async function apiRequest<T>(
   }
 }
 
-// User APIs
 export async function registerUser(params: {
   id: string;
   guildId: string;
@@ -63,7 +62,6 @@ export async function updateUser(userId: string, guildId: string, params: {
   });
 }
 
-// Guild APIs
 export async function registerGuild(params: {
   id: string;
   name: string;
@@ -82,7 +80,6 @@ export async function updateGuildWebhook(guildId: string, webhookUrl: string) {
   });
 }
 
-// Invoice APIs
 export async function createInvoice(params: {
   userId: string;
   guildId: string;
@@ -131,7 +128,6 @@ export async function deleteInvoices(guildId: string, userId: string, status?: s
   });
 }
 
-// Template APIs
 export async function createTemplate(params: {
   userId: string;
   guildId: string;
@@ -156,6 +152,33 @@ export async function getTemplateByName(guildId: string, userId: string, name: s
 
 export async function deleteTemplate(templateId: string) {
   return apiRequest(`/api/templates/${templateId}`, {
+    method: "DELETE"
+  });
+}
+
+export async function saveClient(params: {
+  userId: string;
+  guildId: string;
+  discordId: string;
+  name: string;
+  email: string;
+}) {
+  return apiRequest("/api/clients", {
+    method: "POST",
+    body: JSON.stringify(params)
+  });
+}
+
+export async function listClients(guildId: string, userId: string) {
+  return apiRequest(`/api/clients/user/${userId}/guild/${guildId}`);
+}
+
+export async function getClient(guildId: string, userId: string, clientId: string) {
+  return apiRequest(`/api/clients/user/${userId}/guild/${guildId}/client/${clientId}`);
+}
+
+export async function deleteClient(guildId: string, userId: string, clientId: string) {
+  return apiRequest(`/api/clients/user/${userId}/guild/${guildId}/client/${clientId}`, {
     method: "DELETE"
   });
 }

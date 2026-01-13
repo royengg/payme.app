@@ -193,7 +193,6 @@ async function handleUse(interaction: ChatInputCommandInteraction) {
   const clientEmail = interaction.options.getString("email");
   const amountOverride = interaction.options.getNumber("amount");
 
-  // Check if user is set up
   const userRes = await getUser(interaction.user.id, interaction.guildId!);
   if (userRes.error || !userRes.data) {
     return interaction.editReply({
@@ -201,7 +200,6 @@ async function handleUse(interaction: ChatInputCommandInteraction) {
     });
   }
 
-  // Get the template
   const templateRes = await getTemplateByName(
     interaction.guildId!, 
     interaction.user.id, 
@@ -217,7 +215,6 @@ async function handleUse(interaction: ChatInputCommandInteraction) {
   const template = templateRes.data as any;
   const amount = amountOverride || Number(template.amount);
 
-  // Create invoice from template
   const result = await createInvoice({
     userId: interaction.user.id,
     guildId: interaction.guildId!,
@@ -255,7 +252,6 @@ async function handleUse(interaction: ChatInputCommandInteraction) {
       inline: false 
     });
 
-    // DM client
     try {
       const dmEmbed = new EmbedBuilder()
         .setTitle("💳 You've Received an Invoice")
@@ -283,7 +279,6 @@ async function handleDelete(interaction: ChatInputCommandInteraction) {
 
   const templateName = interaction.options.getString("name", true);
 
-  // Get template first to get its ID
   const templateRes = await getTemplateByName(
     interaction.guildId!, 
     interaction.user.id, 

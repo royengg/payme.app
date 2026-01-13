@@ -10,7 +10,6 @@ import userRoutes from "./routes/users";
 import guildRoutes from "./routes/guilds";
 import "dotenv/config";
 
-// Validate DATABASE_URL
 if (!process.env.DATABASE_URL) {
   console.error("❌ DATABASE_URL is not set in .env file!");
   process.exit(1);
@@ -24,39 +23,32 @@ export const prisma = new PrismaClient({ adapter });
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Health check
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Routes
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/templates", templateRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/guilds", guildRoutes);
 app.use("/webhooks", webhookRoutes);
 
-// Error handler
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error("Error:", err.message);
   res.status(500).json({ error: "Internal server error" });
 });
 
-// Graceful shutdown
 process.on("SIGINT", async () => {
   await prisma.$disconnect();
   await pool.end();
   process.exit(0);
 });
 
-// Start server after verifying database connection
 async function startServer() {
   try {
-    // Test database connection
     await pool.query("SELECT 1");
     console.log("✅ Database connected successfully!");
     
@@ -72,4 +64,3 @@ async function startServer() {
 startServer();
 
 export default app;
-

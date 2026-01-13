@@ -4,10 +4,8 @@ import { registerUserSchema, updateUserSchema, formatZodError } from "../validat
 
 const router = Router();
 
-// Register or update a user
 router.post("/", async (req, res) => {
   try {
-    // Validate with Zod
     const validation = registerUserSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({ error: formatZodError(validation.error) });
@@ -40,7 +38,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Get user by ID and guild
 router.get("/:id/guild/:guildId", async (req, res) => {
   try {
     const { id, guildId } = req.params;
@@ -60,12 +57,10 @@ router.get("/:id/guild/:guildId", async (req, res) => {
   }
 });
 
-// Update user settings
 router.patch("/:id/guild/:guildId", async (req, res) => {
   try {
     const { id, guildId } = req.params;
     
-    // Validate with Zod
     const validation = updateUserSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({ error: formatZodError(validation.error) });

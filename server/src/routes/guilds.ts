@@ -4,10 +4,8 @@ import { registerGuildSchema, updateGuildWebhookSchema, formatZodError } from ".
 
 const router = Router();
 
-// Register or update a guild
 router.post("/", async (req, res) => {
   try {
-    // Validate with Zod
     const validation = registerGuildSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({ error: formatZodError(validation.error) });
@@ -35,7 +33,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Get guild by ID
 router.get("/:id", async (req, res) => {
   try {
     const guild = await prisma.guild.findUnique({
@@ -53,10 +50,8 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Update guild webhook URL
 router.patch("/:id/webhook", async (req, res) => {
   try {
-    // Validate with Zod
     const validation = updateGuildWebhookSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({ error: formatZodError(validation.error) });

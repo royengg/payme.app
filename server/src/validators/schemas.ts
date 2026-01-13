@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Invoice validation schemas
 export const createInvoiceSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
   guildId: z.string().min(1, "Guild ID is required"),
@@ -11,7 +10,6 @@ export const createInvoiceSchema = z.object({
   description: z.string().min(1, "Description is required").max(500, "Description too long")
 });
 
-// Template validation schemas
 export const createTemplateSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
   guildId: z.string().min(1, "Guild ID is required"),
@@ -21,7 +19,6 @@ export const createTemplateSchema = z.object({
   description: z.string().min(1, "Description is required").max(500, "Description too long")
 });
 
-// User validation schemas
 export const registerUserSchema = z.object({
   id: z.string().min(1, "User ID is required"),
   guildId: z.string().min(1, "Guild ID is required"),
@@ -38,7 +35,6 @@ export const updateUserSchema = z.object({
   currency: z.string().length(3, "Currency must be a 3-letter code").optional()
 });
 
-// Guild validation schemas
 export const registerGuildSchema = z.object({
   id: z.string().min(1, "Guild ID is required"),
   name: z.string().min(1, "Guild name is required"),
@@ -49,7 +45,6 @@ export const updateGuildWebhookSchema = z.object({
   webhookUrl: z.string().url("Invalid webhook URL").startsWith("https://discord.com/api/webhooks/", "Must be a Discord webhook URL")
 });
 
-// Helper to format Zod errors
 export function formatZodError(error: z.ZodError): string {
   return error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ");
 }

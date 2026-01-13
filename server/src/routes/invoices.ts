@@ -5,10 +5,8 @@ import { createInvoiceSchema, formatZodError } from "../validators/schemas";
 
 const router = Router();
 
-// Create a new invoice
 router.post("/", async (req, res) => {
   try {
-    // Validate request body with Zod
     const validation = createInvoiceSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({ error: formatZodError(validation.error) });
@@ -16,7 +14,6 @@ router.post("/", async (req, res) => {
 
     const { userId, guildId, clientDiscordId, clientEmail, amount, currency, description } = validation.data;
 
-    // Get user's PayPal email
     const user = await prisma.user.findUnique({
       where: { id_guildId: { id: userId, guildId } }
     });
@@ -27,13 +24,72 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Create invoice in database
+    if (!clientEmail) {
+      const savedClient = await prisma.client.findUnique({
+        where: {
+          userId_guildId_discordId: {
+            userId,
+            guildId,
+            discordId: clientDiscordId
+          }
+        }
+      });
+      
+      if (savedClient?.email) {
+        console.log(`[AddressBook] Using saved email for ${clientDiscordId}: ${savedClient.email}`);
+      }
+    }
+
+    let effectiveClientEmail = clientEmail;
+    if (!effectiveClientEmail) {
+       const savedClient = await prisma.client.findUnique({
+        where: {
+          userId_guildId_discordId: {
+            userId,
+            guildId,
+            discordId: clientDiscordId
+          }
+        }
+      });
+      if (savedClient?.email) effectiveClientEmail = savedClient.email;
+    }
+
+    if (!clientEmail) {
+      const savedClient = await prisma.client.findUnique({
+        where: {
+          userId_guildId_discordId: {
+            userId,
+            guildId,
+            discordId: clientDiscordId
+          }
+        }
+      });
+      
+      if (savedClient?.email) {
+        console.log(`[AddressBook] Found saved email for ${clientDiscordId}: ${savedClient.email}`);
+      }
+    }
+    
+    let finalClientEmail = clientEmail;
+    if (!finalClientEmail) {
+       const savedClient = await prisma.client.findUnique({
+        where: {
+          userId_guildId_discordId: {
+            userId,
+            guildId,
+            discordId: clientDiscordId
+          }
+        }
+      });
+      if (savedClient?.email) finalClientEmail = savedClient.email;
+    }
+
     const invoice = await prisma.invoice.create({
       data: {
         userId,
         guildId,
         clientDiscordId,
-        clientEmail,
+        clientEmail: effectiveClientEmail,
         amount,
         currency: currency || user.currency || "USD",
         description,
@@ -41,8 +97,7 @@ router.post("/", async (req, res) => {
       }
     });
 
-    // Create PayPal invoice if client email is provided
-    if (clientEmail) {
+    if (effectiveClientEmail) {
       try {
         const paypalInvoice = await paypalService.createInvoice({
           invoiceId: invoice.id,
@@ -50,25 +105,21 @@ router.post("/", async (req, res) => {
           currency: currency || user.currency || "USD",
           description,
           invoicerEmail: user.paypalEmail,
-          recipientEmail: clientEmail
+          recipientEmail: effectiveClientEmail
         });
 
-        // Update our invoice with PayPal details immediately
-        // This ensures checking the link works even if emailing fails
         let updatedInvoice = await prisma.invoice.update({
           where: { id: invoice.id },
           data: {
             paypalInvoiceId: paypalInvoice.id,
             paypalLink: paypalInvoice.href,
-            status: "DRAFT" // Still draft until sent
+            status: "DRAFT" 
           }
         });
 
         try {
-          // Send the PayPal invoice
           await paypalService.sendInvoice(paypalInvoice.id);
 
-          // Update status to SENT
           updatedInvoice = await prisma.invoice.update({
             where: { id: invoice.id },
             data: { status: "SENT" }
@@ -78,7 +129,6 @@ router.post("/", async (req, res) => {
 
         } catch (sendError: any) {
           console.error("PayPal send error:", sendError);
-          // Return the invoice with the link, but with a warning
           return res.status(201).json({ 
             ...updatedInvoice, 
             warning: "Invoice created but email sending failed. Share the link manually." 
@@ -87,7 +137,6 @@ router.post("/", async (req, res) => {
 
       } catch (paypalError) {
         console.error("PayPal create error:", paypalError);
-        // Return the draft invoice if creation fails
         return res.status(201).json({ 
           ...invoice, 
           warning: "Failed to create PayPal invoice" 
@@ -102,7 +151,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-// List invoices for a guild
 router.get("/guild/:guildId", async (req, res) => {
   try {
     const { guildId } = req.params;
@@ -125,7 +173,6 @@ router.get("/guild/:guildId", async (req, res) => {
   }
 });
 
-// Get a single invoice
 router.get("/:id", async (req, res) => {
   try {
     const invoice = await prisma.invoice.findUnique({
@@ -143,7 +190,6 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Cancel an invoice
 router.patch("/:id/cancel", async (req, res) => {
   try {
     const invoice = await prisma.invoice.findUnique({
@@ -158,7 +204,6 @@ router.patch("/:id/cancel", async (req, res) => {
       return res.status(400).json({ error: "Cannot cancel a paid invoice" });
     }
 
-    // Cancel on PayPal if it exists
     if (invoice.paypalInvoiceId) {
       try {
         await paypalService.cancelInvoice(invoice.paypalInvoiceId);
@@ -180,7 +225,6 @@ router.patch("/:id/cancel", async (req, res) => {
 });
 
 
-// Delete invoices (bulk)
 router.delete("/", async (req, res) => {
   try {
     const { userId, guildId, status } = req.query;
@@ -195,7 +239,6 @@ router.delete("/", async (req, res) => {
     };
     if (status && status !== "ALL") where.status = String(status);
 
-    // Find invoices to delete
     const invoices = await prisma.invoice.findMany({ where });
 
     if (invoices.length === 0) {
@@ -204,7 +247,6 @@ router.delete("/", async (req, res) => {
 
     console.log(`Deleting ${invoices.length} invoices...`);
 
-    // Process PayPal cleanup
     for (const invoice of invoices) {
       if (invoice.paypalInvoiceId) {
         try {
@@ -215,12 +257,10 @@ router.delete("/", async (req, res) => {
           }
         } catch (error) {
           console.error(`Failed to clean up invoice ${invoice.id} on PayPal:`, error);
-          // Continue deleting from DB even if PayPal cleanup fails
         }
       }
     }
 
-    // Delete from database
     const result = await prisma.invoice.deleteMany({ where });
 
     res.json({ count: result.count });

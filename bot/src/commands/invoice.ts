@@ -102,7 +102,6 @@ export const invoiceCommand = {
 async function handleDeleteAll(interaction: any) {
   await interaction.deferReply({ flags: ["Ephemeral"] });
   
-  // Confirm deletion
   const confirmEmbed = new EmbedBuilder()
     .setTitle("⚠️ Delete All Invoices?")
     .setColor(0xff0000)
@@ -157,7 +156,6 @@ async function handleDeleteAll(interaction: any) {
           components: []
         });
         
-        // Try to update the original list message to show empty state
         try {
           await interaction.message.edit({
             content: "📭 Invoices deleted.",
@@ -165,7 +163,6 @@ async function handleDeleteAll(interaction: any) {
             components: []
           });
         } catch (e) {
-          // Ignore if can't edit original
         }
       }
     } else {
@@ -193,7 +190,6 @@ async function handleCreate(interaction: ChatInputCommandInteraction) {
   const currency = interaction.options.getString("currency") || "USD";
   const clientEmail = interaction.options.getString("email");
 
-  // Check if user is set up
   const userRes = await getUser(interaction.user.id, interaction.guildId!);
   if (userRes.error || !userRes.data) {
     return interaction.editReply({
@@ -201,7 +197,6 @@ async function handleCreate(interaction: ChatInputCommandInteraction) {
     });
   }
 
-  // Create the invoice
   const result = await createInvoice({
     userId: interaction.user.id,
     guildId: interaction.guildId!,
@@ -220,7 +215,6 @@ async function handleCreate(interaction: ChatInputCommandInteraction) {
 
   const invoice = result.data as any;
 
-  // Build response embed
   const embed = new EmbedBuilder()
     .setTitle("📄 Invoice Created")
     .setColor(0x5865f2)
@@ -240,7 +234,6 @@ async function handleCreate(interaction: ChatInputCommandInteraction) {
       inline: false 
     });
 
-    // DM the client with payment link
     try {
       const dmEmbed = new EmbedBuilder()
         .setTitle("💳 You've Received an Invoice")
@@ -260,7 +253,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction) {
       embed.addFields({ name: "⚠️ DM Failed", value: "Couldn't DM client. Share the payment link manually.", inline: false });
     }
   } else if (invoice.warning) {
-    embed.setColor(0xffaa00); // Orange for warning
+    embed.setColor(0xffaa00);
     embed.addFields({ 
       name: "⚠️ PayPal Error", 
       value: invoice.warning + "\n(Invoice saved as Draft)", 
@@ -309,7 +302,6 @@ async function handleList(interaction: ChatInputCommandInteraction) {
     .setDescription(`Showing ${invoices.length} invoice(s)${status ? ` (Status: ${status})` : ""}`)
     .setTimestamp();
 
-  // Add up to 10 invoices
   const displayInvoices = invoices.slice(0, 10);
   for (const inv of displayInvoices) {
     const statusEmojis: Record<string, string> = {
@@ -331,7 +323,6 @@ async function handleList(interaction: ChatInputCommandInteraction) {
     embed.setFooter({ text: `Showing 10 of ${invoices.length} invoices` });
   }
 
-  // Add generic Delete All button
   const row = new ActionRowBuilder<ButtonBuilder>()
     .addComponents(
       new ButtonBuilder()
