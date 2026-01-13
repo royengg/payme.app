@@ -53,26 +53,44 @@ router.post("/", async (req, res) => {
           recipientEmail: clientEmail
         });
 
-        // Send the PayPal invoice
-        await paypalService.sendInvoice(paypalInvoice.id);
-
-        // Update our invoice with PayPal details
-        const updatedInvoice = await prisma.invoice.update({
+        // Update our invoice with PayPal details immediately
+        // This ensures checking the link works even if emailing fails
+        let updatedInvoice = await prisma.invoice.update({
           where: { id: invoice.id },
           data: {
             paypalInvoiceId: paypalInvoice.id,
             paypalLink: paypalInvoice.href,
-            status: "SENT"
+            status: "DRAFT" // Still draft until sent
           }
         });
 
-        return res.status(201).json(updatedInvoice);
+        try {
+          // Send the PayPal invoice
+          await paypalService.sendInvoice(paypalInvoice.id);
+
+          // Update status to SENT
+          updatedInvoice = await prisma.invoice.update({
+            where: { id: invoice.id },
+            data: { status: "SENT" }
+          });
+          
+          return res.status(201).json(updatedInvoice);
+
+        } catch (sendError: any) {
+          console.error("PayPal send error:", sendError);
+          // Return the invoice with the link, but with a warning
+          return res.status(201).json({ 
+            ...updatedInvoice, 
+            warning: "Invoice created but email sending failed. Share the link manually." 
+          });
+        }
+
       } catch (paypalError) {
-        console.error("PayPal error:", paypalError);
-        // Return the draft invoice even if PayPal fails
+        console.error("PayPal create error:", paypalError);
+        // Return the draft invoice if creation fails
         return res.status(201).json({ 
           ...invoice, 
-          warning: "Invoice created but PayPal integration failed" 
+          warning: "Failed to create PayPal invoice" 
         });
       }
     }

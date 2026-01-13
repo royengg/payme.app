@@ -93,7 +93,7 @@ export const invoiceCommand = {
 };
 
 async function handleCreate(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: ["Ephemeral"] });
 
   const client = interaction.options.getUser("client", true);
   const amount = interaction.options.getNumber("amount", true);
@@ -167,6 +167,13 @@ async function handleCreate(interaction: ChatInputCommandInteraction) {
     } catch {
       embed.addFields({ name: "⚠️ DM Failed", value: "Couldn't DM client. Share the payment link manually.", inline: false });
     }
+  } else if (invoice.warning) {
+    embed.setColor(0xffaa00); // Orange for warning
+    embed.addFields({ 
+      name: "⚠️ PayPal Error", 
+      value: invoice.warning + "\n(Invoice saved as Draft)", 
+      inline: false 
+    });
   } else if (!clientEmail) {
     embed.addFields({ 
       name: "⚠️ No PayPal Link", 
@@ -179,7 +186,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction) {
 }
 
 async function handleList(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: ["Ephemeral"] });
 
   const statusFilter = interaction.options.getString("status");
   const status = statusFilter === "ALL" ? undefined : statusFilter || undefined;
@@ -236,7 +243,7 @@ async function handleList(interaction: ChatInputCommandInteraction) {
 }
 
 async function handleCancel(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: ["Ephemeral"] });
 
   const invoiceId = interaction.options.getString("invoice_id", true);
 

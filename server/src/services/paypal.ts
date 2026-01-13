@@ -120,8 +120,39 @@ class PayPalService {
       throw new Error(`PayPal create invoice failed: ${error}`);
     }
 
-    const invoice = await response.json() as PayPalInvoice;
-    return invoice;
+    const data = await response.json() as any;
+
+    // Extract ID from HREF if not present explicitly (PayPal Create API returns only a link)
+    let id = data.id;
+    if (!id && data.href) {
+      const parts = data.href.split("/");
+      id = parts[parts.length - 1];
+    }
+
+    if (!id) {
+       throw new Error("Failed to extract invoice ID from PayPal response");
+    }
+
+    // Fetch full invoice details to get the Payer View URL
+    try {
+      const details = await this.getInvoice(id);
+      const payerLink = details.detail?.metadata?.recipient_view_url 
+        || `https://www.sandbox.paypal.com/invoice/p/${id}`;
+      
+      return {
+        id,
+        href: payerLink,
+        status: "DRAFT"
+      };
+    } catch (error) {
+       console.error("Failed to fetch invoice details:", error);
+       // Fallback to constructed link
+       return {
+         id,
+         href: `https://www.sandbox.paypal.com/invoice/p/${id}`,
+         status: "DRAFT"
+       };
+    }
   }
 
   /**

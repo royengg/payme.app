@@ -107,7 +107,7 @@ export const templateCommand = {
 };
 
 async function handleCreate(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: ["Ephemeral"] });
 
   const name = interaction.options.getString("name", true);
   const amount = interaction.options.getNumber("amount", true);
@@ -146,7 +146,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction) {
 }
 
 async function handleList(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: ["Ephemeral"] });
 
   const result = await listTemplates(interaction.guildId!, interaction.user.id);
 
@@ -186,7 +186,7 @@ async function handleList(interaction: ChatInputCommandInteraction) {
 }
 
 async function handleUse(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: ["Ephemeral"] });
 
   const templateName = interaction.options.getString("name", true);
   const client = interaction.options.getUser("client", true);
@@ -279,7 +279,7 @@ async function handleUse(interaction: ChatInputCommandInteraction) {
 }
 
 async function handleDelete(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: ["Ephemeral"] });
 
   const templateName = interaction.options.getString("name", true);
 

@@ -4,7 +4,7 @@ import {
   EmbedBuilder,
   PermissionFlagsBits
 } from "discord.js";
-import { registerUser, updateUser, getUser, registerGuild, updateGuildWebhook } from "../utils/api";
+import { registerUser, getUser, registerGuild, updateGuildWebhook } from "../utils/api";
 
 export const setupCommand = {
   data: new SlashCommandBuilder()
@@ -77,8 +77,18 @@ export const setupCommand = {
   }
 };
 
+// Helper to ensure guild is registered
+async function ensureGuild(interaction: ChatInputCommandInteraction) {
+  if (!interaction.guildId || !interaction.guild) return;
+  
+  await registerGuild({
+    id: interaction.guildId,
+    name: interaction.guild.name
+  });
+}
+
 async function handlePaypal(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: ["Ephemeral"] });
 
   const email = interaction.options.getString("email", true);
 
@@ -89,6 +99,9 @@ async function handlePaypal(interaction: ChatInputCommandInteraction) {
       content: "❌ Please provide a valid email address."
     });
   }
+
+  // Ensure guild exists first
+  await ensureGuild(interaction);
 
   // Register/update user
   const result = await registerUser({
@@ -102,12 +115,6 @@ async function handlePaypal(interaction: ChatInputCommandInteraction) {
       content: `❌ Failed to save PayPal email: ${result.error}`
     });
   }
-
-  // Also register guild if not exists
-  await registerGuild({
-    id: interaction.guildId!,
-    name: interaction.guild?.name || "Unknown"
-  });
 
   const embed = new EmbedBuilder()
     .setTitle("✅ PayPal Email Configured")
@@ -123,7 +130,7 @@ async function handlePaypal(interaction: ChatInputCommandInteraction) {
 }
 
 async function handleCurrency(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: ["Ephemeral"] });
 
   const currency = interaction.options.getString("code", true).toUpperCase();
 
@@ -132,11 +139,17 @@ async function handleCurrency(interaction: ChatInputCommandInteraction) {
   
   if (!validCurrencies.includes(currency) && currency.length !== 3) {
     return interaction.editReply({
-      content: `❌ Invalid currency code. Use standard 3-letter codes like USD, EUR, GBP, INR, etc.`
+      content: "❌ Invalid currency code. Use standard 3-letter codes like USD, EUR, GBP, INR, etc."
     });
   }
 
-  const result = await updateUser(interaction.user.id, interaction.guildId!, {
+  // Ensure guild exists first
+  await ensureGuild(interaction);
+
+  // Use registerUser (upsert) to handle both create and update
+  const result = await registerUser({
+    id: interaction.user.id,
+    guildId: interaction.guildId!,
     currency
   });
 
@@ -152,7 +165,7 @@ async function handleCurrency(interaction: ChatInputCommandInteraction) {
 }
 
 async function handlePaypalMe(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: ["Ephemeral"] });
 
   const username = interaction.options.getString("username", true);
 
@@ -170,36 +183,26 @@ async function handlePaypalMe(interaction: ChatInputCommandInteraction) {
     });
   }
 
-  // Update user
-  const result = await updateUser(interaction.user.id, interaction.guildId!, {
+  // Ensure guild exists first
+  await ensureGuild(interaction);
+
+  // Use registerUser (upsert) to handle both create and update
+  const result = await registerUser({
+    id: interaction.user.id,
+    guildId: interaction.guildId!,
     paypalMeUsername: username
   });
 
   if (result.error) {
-    // User might not exist yet, try registering first
-    const registerResult = await registerUser({
-      id: interaction.user.id,
-      guildId: interaction.guildId!,
-      paypalMeUsername: username
+    return interaction.editReply({
+      content: `❌ Failed to save PayPal.me username: ${result.error}`
     });
-
-    if (registerResult.error) {
-      return interaction.editReply({
-        content: `❌ Failed to save PayPal.me username: ${registerResult.error}`
-      });
-    }
   }
-
-  // Also register guild if not exists
-  await registerGuild({
-    id: interaction.guildId!,
-    name: interaction.guild?.name || "Unknown"
-  });
 
   const embed = new EmbedBuilder()
     .setTitle("✅ PayPal.me Username Configured")
     .setColor(0x0070ba)
-    .setDescription(`Your PayPal.me username has been set!`)
+    .setDescription("Your PayPal.me username has been set!")
     .addFields(
       { 
         name: "🔗 Your Payment Link", 
@@ -217,7 +220,7 @@ async function handlePaypalMe(interaction: ChatInputCommandInteraction) {
 }
 
 async function handleWebhook(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: ["Ephemeral"] });
 
   // Check if user has admin permissions
   if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
@@ -236,10 +239,7 @@ async function handleWebhook(interaction: ChatInputCommandInteraction) {
   }
 
   // Register guild first if needed
-  await registerGuild({
-    id: interaction.guildId!,
-    name: interaction.guild?.name || "Unknown"
-  });
+  await ensureGuild(interaction);
 
   const result = await updateGuildWebhook(interaction.guildId!, webhookUrl);
 
@@ -263,7 +263,7 @@ async function handleWebhook(interaction: ChatInputCommandInteraction) {
 }
 
 async function handleStatus(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: ["Ephemeral"] });
 
   const userRes = await getUser(interaction.user.id, interaction.guildId!);
 
@@ -279,6 +279,7 @@ async function handleStatus(interaction: ChatInputCommandInteraction) {
       value: "Use `/setup paypal your@email.com` to configure your PayPal business email."
     });
   } else {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = userRes.data as any;
     embed.addFields(
       { 

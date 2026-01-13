@@ -28,7 +28,7 @@ commands.forEach(cmd => {
 });
 
 // Ready event
-client.once("ready", async () => {
+client.once("clientReady", async () => {
   console.log(`🤖 Logged in as ${client.user?.tag}`);
   console.log(`📊 Serving ${client.guilds.cache.size} server(s)`);
   

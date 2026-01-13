@@ -8,7 +8,7 @@
         "discord.js": "^14.25.1",
       },
       "devDependencies": {
-        "@types/bun": "latest",
+        "@types/bun": "^1.3.5",
       },
       "peerDependencies": {
         "typescript": "^5",

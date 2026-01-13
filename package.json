@@ -1,0 +1,15 @@
+{
+  "name": "payme-app",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently \"bun run --cwd server dev\" \"bun run --cwd bot dev\" --names \"SERVER,BOT\" --prefix-colors \"blue,green\"",
+    "start": "concurrently \"bun run --cwd server start\" \"bun run --cwd bot start\" --names \"SERVER,BOT\" --prefix-colors \"blue,green\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.2.0",
+    "@prisma/client-runtime-utils": "^7.2.0"
+  }
+}

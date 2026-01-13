@@ -40,7 +40,7 @@ export const paylinkCommand = {
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: ["Ephemeral"] });
 
     const amount = interaction.options.getNumber("amount", true);
     const description = interaction.options.getString("description") || "Payment";

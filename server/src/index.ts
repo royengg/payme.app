@@ -1,13 +1,25 @@
 import express from "express";
 import cors from "cors";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from ".prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import invoiceRoutes from "./routes/invoices";
 import templateRoutes from "./routes/templates";
 import webhookRoutes from "./routes/webhooks";
 import userRoutes from "./routes/users";
 import guildRoutes from "./routes/guilds";
+import "dotenv/config";
 
-export const prisma = new PrismaClient();
+// Validate DATABASE_URL
+if (!process.env.DATABASE_URL) {
+  console.error("❌ DATABASE_URL is not set in .env file!");
+  process.exit(1);
+}
+
+console.log("🔌 Connecting to database...");
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+export const prisma = new PrismaClient({ adapter });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,11 +49,27 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 // Graceful shutdown
 process.on("SIGINT", async () => {
   await prisma.$disconnect();
+  await pool.end();
   process.exit(0);
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+// Start server after verifying database connection
+async function startServer() {
+  try {
+    // Test database connection
+    await pool.query("SELECT 1");
+    console.log("✅ Database connected successfully!");
+    
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("❌ Failed to connect to database:", error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 export default app;
+
