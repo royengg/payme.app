@@ -183,6 +183,31 @@ class PayPalService {
   }
 
   /**
+   * Delete a draft invoice
+   */
+  async deleteInvoice(paypalInvoiceId: string): Promise<void> {
+    const token = await this.getAccessToken();
+
+    const response = await fetch(
+      `${this.baseUrl}/v2/invoicing/invoices/${paypalInvoiceId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      // Ignore 404s (already deleted)
+      if (response.status === 404) return;
+      
+      const error = await response.text();
+      throw new Error(`PayPal delete invoice failed: ${error}`);
+    }
+  }
+
+  /**
    * Cancel an invoice
    */
   async cancelInvoice(paypalInvoiceId: string): Promise<void> {
@@ -199,12 +224,15 @@ class PayPalService {
         body: JSON.stringify({
           send_to_invoicer: true,
           send_to_recipient: true,
-          note: "Invoice cancelled"
+          note: "Invoice cancelled via PayMe Bot"
         })
       }
     );
 
     if (!response.ok) {
+      // Ignore 404s or 422s (already cancelled/invalid state)
+      if (response.status === 404 || response.status === 422) return;
+
       const error = await response.text();
       throw new Error(`PayPal cancel invoice failed: ${error}`);
     }

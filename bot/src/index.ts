@@ -51,21 +51,38 @@ client.once("clientReady", async () => {
 
 // Interaction handler
 client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
+  // Handle Slash Commands
+  if (interaction.isChatInputCommand()) {
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
 
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return;
+    try {
+      await command.execute(interaction);
+    } catch (error) {
+      console.error(`Error executing ${interaction.commandName}:`, error);
+      
+      const errorMessage = "There was an error executing this command!";
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({ content: errorMessage, ephemeral: true });
+      } else {
+        await interaction.reply({ content: errorMessage, ephemeral: true });
+      }
+    }
+    return;
+  }
 
-  try {
-    await command.execute(interaction);
-  } catch (error) {
-    console.error(`Error executing ${interaction.commandName}:`, error);
-    
-    const errorMessage = "There was an error executing this command!";
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({ content: errorMessage, ephemeral: true });
-    } else {
-      await interaction.reply({ content: errorMessage, ephemeral: true });
+  // Handle Buttons
+  if (interaction.isButton()) {
+    // Route invoice-related buttons to invoice command
+    if (["delete_all", "confirm_delete", "cancel_delete"].includes(interaction.customId)) {
+      try {
+        await invoiceCommand.execute(interaction as any);
+      } catch (error) {
+        console.error("Button handling error:", error);
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({ content: "❌ Button interaction failed.", ephemeral: true });
+        }
+      }
     }
   }
 });

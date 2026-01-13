@@ -10,10 +10,11 @@ router.post("/paypal", async (req, res) => {
     const event = req.body;
     
     console.log("PayPal webhook received:", event.event_type);
+    console.log("Webhook payload:", JSON.stringify(event, null, 2));
 
     // Handle invoice paid event
-    if (event.event_type === "INVOICES.INVOICE.PAID") {
-      const paypalInvoiceId = event.resource?.id;
+    if (event.event_type === "INVOICING.INVOICE.PAID" || event.event_type === "INVOICES.INVOICE.PAID") {
+      const paypalInvoiceId = event.resource?.invoice?.id || event.resource?.id;
       
       if (!paypalInvoiceId) {
         console.error("No invoice ID in webhook payload");
@@ -60,8 +61,8 @@ router.post("/paypal", async (req, res) => {
     }
 
     // Handle invoice cancelled event
-    if (event.event_type === "INVOICES.INVOICE.CANCELLED") {
-      const paypalInvoiceId = event.resource?.id;
+    if (event.event_type === "INVOICING.INVOICE.CANCELLED" || event.event_type === "INVOICES.INVOICE.CANCELLED") {
+      const paypalInvoiceId = event.resource?.invoice?.id || event.resource?.id;
       
       if (paypalInvoiceId) {
         await prisma.invoice.updateMany({

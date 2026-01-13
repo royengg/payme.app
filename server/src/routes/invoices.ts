@@ -179,4 +179,55 @@ router.patch("/:id/cancel", async (req, res) => {
   }
 });
 
+
+// Delete invoices (bulk)
+router.delete("/", async (req, res) => {
+  try {
+    const { userId, guildId, status } = req.query;
+
+    if (!userId || !guildId) {
+      return res.status(400).json({ error: "userId and guildId are required" });
+    }
+
+    const where: any = { 
+      userId: String(userId), 
+      guildId: String(guildId) 
+    };
+    if (status && status !== "ALL") where.status = String(status);
+
+    // Find invoices to delete
+    const invoices = await prisma.invoice.findMany({ where });
+
+    if (invoices.length === 0) {
+      return res.json({ count: 0 });
+    }
+
+    console.log(`Deleting ${invoices.length} invoices...`);
+
+    // Process PayPal cleanup
+    for (const invoice of invoices) {
+      if (invoice.paypalInvoiceId) {
+        try {
+          if (invoice.status === "DRAFT") {
+            await paypalService.deleteInvoice(invoice.paypalInvoiceId);
+          } else if (invoice.status === "SENT") {
+            await paypalService.cancelInvoice(invoice.paypalInvoiceId);
+          }
+        } catch (error) {
+          console.error(`Failed to clean up invoice ${invoice.id} on PayPal:`, error);
+          // Continue deleting from DB even if PayPal cleanup fails
+        }
+      }
+    }
+
+    // Delete from database
+    const result = await prisma.invoice.deleteMany({ where });
+
+    res.json({ count: result.count });
+  } catch (error) {
+    console.error("Delete invoices error:", error);
+    res.status(500).json({ error: "Failed to delete invoices" });
+  }
+});
+
 export default router;

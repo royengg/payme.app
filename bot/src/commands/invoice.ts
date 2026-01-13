@@ -79,7 +79,14 @@ export const invoiceCommand = {
         )
     ),
 
-  async execute(interaction: ChatInputCommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction | any) {
+    if (interaction.isButton()) {
+      if (interaction.customId === "delete_all") {
+        await handleDeleteAll(interaction);
+      }
+      return;
+    }
+
     const subcommand = interaction.options.getSubcommand();
 
     if (subcommand === "create") {
@@ -91,6 +98,91 @@ export const invoiceCommand = {
     }
   }
 };
+
+async function handleDeleteAll(interaction: any) {
+  await interaction.deferReply({ flags: ["Ephemeral"] });
+  
+  // Confirm deletion
+  const confirmEmbed = new EmbedBuilder()
+    .setTitle("⚠️ Delete All Invoices?")
+    .setColor(0xff0000)
+    .setDescription("Are you sure you want to delete ALL your invoices? This will:\n- Delete DRAFT invoices from PayPal\n- Cancel SENT invoices on PayPal\n- Remove them from the database\n\n**This action cannot be undone.**");
+    
+  const row = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId("confirm_delete")
+        .setLabel("Yes, Delete Everything")
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId("cancel_delete")
+        .setLabel("Cancel")
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+  const msg = await interaction.editReply({
+    embeds: [confirmEmbed],
+    components: [row]
+  });
+
+  try {
+    const confirmation = await msg.awaitMessageComponent({
+      filter: (i: any) => i.user.id === interaction.user.id,
+      time: 15000
+    });
+
+    if (confirmation.customId === "confirm_delete") {
+      await confirmation.deferUpdate();
+      
+      const statusFilter = interaction.message.embeds[0].description.includes("status:") 
+        ? interaction.message.embeds[0].description.split("status: ")[1].split(")")[0]
+        : undefined;
+
+      const result = await import("../utils/api").then(api => api.deleteInvoices(
+        interaction.guildId,
+        interaction.user.id,
+        statusFilter
+      ));
+
+      if (result.error) {
+        await confirmation.editReply({
+          content: `❌ Failed to delete invoices: ${result.error}`,
+          embeds: [],
+          components: []
+        });
+      } else {
+        await confirmation.editReply({
+          content: `✅ Successfully deleted ${(result.data as any).count} invoices!`,
+          embeds: [],
+          components: []
+        });
+        
+        // Try to update the original list message to show empty state
+        try {
+          await interaction.message.edit({
+            content: "📭 Invoices deleted.",
+            embeds: [],
+            components: []
+          });
+        } catch (e) {
+          // Ignore if can't edit original
+        }
+      }
+    } else {
+      await confirmation.update({
+        content: "❌ Deletion cancelled.",
+        embeds: [],
+        components: []
+      });
+    }
+  } catch (e) {
+    await interaction.editReply({
+      content: "❌ Confirmation timed out.",
+      embeds: [],
+      components: []
+    });
+  }
+}
 
 async function handleCreate(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply({ flags: ["Ephemeral"] });
@@ -214,7 +306,7 @@ async function handleList(interaction: ChatInputCommandInteraction) {
   const embed = new EmbedBuilder()
     .setTitle("📋 Your Invoices")
     .setColor(0x5865f2)
-    .setDescription(`Showing ${invoices.length} invoice(s)`)
+    .setDescription(`Showing ${invoices.length} invoice(s)${status ? ` (Status: ${status})` : ""}`)
     .setTimestamp();
 
   // Add up to 10 invoices
@@ -239,7 +331,16 @@ async function handleList(interaction: ChatInputCommandInteraction) {
     embed.setFooter({ text: `Showing 10 of ${invoices.length} invoices` });
   }
 
-  await interaction.editReply({ embeds: [embed] });
+  // Add generic Delete All button
+  const row = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId("delete_all")
+        .setLabel("🗑️ Delete All")
+        .setStyle(ButtonStyle.Danger)
+    );
+
+  await interaction.editReply({ embeds: [embed], components: [row] });
 }
 
 async function handleCancel(interaction: ChatInputCommandInteraction) {

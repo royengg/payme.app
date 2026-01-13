@@ -118,6 +118,19 @@ export async function cancelInvoice(invoiceId: string) {
   });
 }
 
+export async function deleteInvoices(guildId: string, userId: string, status?: string) {
+  let url = "/api/invoices";
+  const params = new URLSearchParams();
+  params.append("userId", userId);
+  params.append("guildId", guildId);
+  if (status) params.append("status", status);
+  url += `?${params.toString()}`;
+
+  return apiRequest(url, {
+    method: "DELETE"
+  });
+}
+
 // Template APIs
 export async function createTemplate(params: {
   userId: string;

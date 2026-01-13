@@ -35,12 +35,12 @@ export const setupCommand = {
     .addSubcommand(subcommand =>
       subcommand
         .setName("webhook")
-        .setDescription("Set the Discord webhook for payment notifications")
-        .addStringOption(option =>
+        .setDescription("Automatically create a webhook for payment notifications")
+        .addChannelOption(option =>
           option
-            .setName("url")
-            .setDescription("Discord webhook URL")
-            .setRequired(true)
+             .setName("channel")
+             .setDescription("Channel to post notifications in (defaults to current)")
+             .setRequired(false)
         )
     )
     .addSubcommand(subcommand =>
@@ -229,37 +229,60 @@ async function handleWebhook(interaction: ChatInputCommandInteraction) {
     });
   }
 
-  const webhookUrl = interaction.options.getString("url", true);
-
-  // Validate webhook URL
-  if (!webhookUrl.startsWith("https://discord.com/api/webhooks/")) {
+  // Check if bot has ManageWebhooks permission
+  if (!interaction.guild?.members.me?.permissions.has(PermissionFlagsBits.ManageWebhooks)) {
     return interaction.editReply({
-      content: "❌ Please provide a valid Discord webhook URL."
+      content: "❌ I need the **Manage Webhooks** permission to create the alert."
     });
   }
 
-  // Register guild first if needed
-  await ensureGuild(interaction);
-
-  const result = await updateGuildWebhook(interaction.guildId!, webhookUrl);
-
-  if (result.error) {
+  const targetChannel = interaction.options.getChannel("channel") || interaction.channel;
+  
+  if (!targetChannel || !("createWebhook" in targetChannel)) {
     return interaction.editReply({
-      content: `❌ Failed to save webhook: ${result.error}`
+      content: "❌ Invalid channel selected. Please ensure it's a text channel."
     });
   }
 
-  const embed = new EmbedBuilder()
-    .setTitle("✅ Webhook Configured")
-    .setColor(0x00ff00)
-    .setDescription("Payment notifications will now be sent to the configured channel.")
-    .addFields({
-      name: "What happens now?",
-      value: "When a client pays an invoice, a notification will be posted to the webhook channel."
-    })
-    .setTimestamp();
+  try {
+    // Create the webhook
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const webhook = await (targetChannel as any).createWebhook({
+      name: "PayMe Alerts",
+      avatar: "https://i.imgur.com/4M34hi2.png", // Optional: Add a logo
+    });
 
-  await interaction.editReply({ embeds: [embed] });
+    // Register guild first if needed
+    await ensureGuild(interaction);
+
+    const result = await updateGuildWebhook(interaction.guildId!, webhook.url);
+
+    if (result.error) {
+      // Clean up webhook if DB save fails
+      await webhook.delete();
+      return interaction.editReply({
+        content: `❌ Failed to save webhook: ${result.error}`
+      });
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle("✅ Webhook Configured")
+      .setColor(0x00ff00)
+      .setDescription(`Payment notifications will now be sent to <#${targetChannel.id}>.`)
+      .addFields({
+        name: "Test It Out",
+        value: "Create and pay an invoice to see the notification appear!"
+      })
+      .setTimestamp();
+
+    await interaction.editReply({ embeds: [embed] });
+
+  } catch (error) {
+    console.error("Failed to create webhook:", error);
+    return interaction.editReply({
+      content: "❌ Failed to create Discord webhook. Please check my permissions."
+    });
+  }
 }
 
 async function handleStatus(interaction: ChatInputCommandInteraction) {
