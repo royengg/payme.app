@@ -18,6 +18,7 @@ Before you start, make sure you have a **PayPal Business Account**.
 
 - `/setup paypal [email]` - Link your PayPal Business email (where you receive money).
 - `/setup currency [code]` - Set your default currency (e.g., USD).
+- `/setup paypalme [username]` - Set your PayPal.me username for quick links.
 - `/setup webhook [url]` - (Admin only) Set a channel for payment notifications.
 
 ### 2. Creating Invoices
@@ -28,7 +29,28 @@ You only need your client's PayPal email. They don't need to be on Discord.
 
   *The bot will generate a payment link that you can send to your client, or it will be emailed to them directly by PayPal.*
 
-### 3. Using Templates
+### 3. Address Book
+Save client emails to avoid typing them every time.
+
+- **Add a client:**
+  `/client add user:@User email:client@example.com name:"Client Name"`
+
+- **List clients:**
+  `/client list`
+
+- **Delete a client:**
+  `/client delete user:@User`
+
+### 4. Quick Payment Links (PayPal.me)
+Generate a simple PayPal.me link for quick payments.
+
+- **Generate a link:**
+  `/paylink amount:25 description:"Consultation"`
+  
+- **Send to a user directly:**
+  `/paylink amount:50 description:"Project Deposit" client:@User`
+
+### 5. Using Templates
 Save time on recurring jobs.
 
 - **Create a template:**
@@ -37,7 +59,7 @@ Save time on recurring jobs.
 - **Use a template:**
   `/template use name:"Basic Fix" client:@ClientUser`
 
-### 4. Manage Invoices
+### 6. Manage Invoices
 - `/invoice list` - See all your pending and paid invoices.
 - `/invoice cancel` - Cancel an unpaid invoice.
 
