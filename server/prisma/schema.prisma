@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Discord server configuration
+model Guild {
+  id        String     @id // Discord Guild ID
+  name      String
+  webhookUrl String?   // Discord webhook for payment notifications
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  users     User[]
+  invoices  Invoice[]
+  templates Template[]
+}
+
+// Users who create invoices
+model User {
+  id          String     @id // Discord User ID
+  email       String?
+  paypalEmail String?    // PayPal business email for invoicing
+  paypalMeUsername String?  // PayPal.me username for quick payment links
+  currency    String     @default("USD") // Default currency
+  guildId     String
+  guild       Guild      @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  invoices    Invoice[]
+  templates   Template[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([id, guildId])
+}
+
+// Invoice records
+model Invoice {
+  id              String        @id @default(cuid())
+  paypalInvoiceId String?       @unique
+  paypalLink      String?
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("USD")
+  description     String
+  status          InvoiceStatus @default(DRAFT)
+  clientDiscordId String        // Client's Discord user ID
+  clientEmail     String?       // Client's email for PayPal
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guildId         String
+  guild           Guild         @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  paidAt          DateTime?
+
+  @@index([userId])
+  @@index([guildId])
+  @@index([status])
+}
+
+// Reusable invoice templates
+model Template {
+  id          String   @id @default(cuid())
+  name        String
+  amount      Decimal  @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  description String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guildId     String
+  guild       Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([name, userId, guildId])
+  @@index([userId])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  CANCELLED
+}
