@@ -217,7 +217,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction) {
   const currency = interaction.options.getString("currency") || "USD";
   const clientEmail = interaction.options.getString("email");
 
-  const userRes = await getUser(interaction.user.id, interaction.guildId!);
+  const userRes = await getUser(interaction.user.id);
   if (userRes.error || !userRes.data) {
     return interaction.editReply({
       content: "❌ You need to set up your PayPal email first. Use `/setup paypal` command."

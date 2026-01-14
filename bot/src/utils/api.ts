@@ -38,7 +38,6 @@ async function apiRequest<T>(
 
 export async function registerUser(params: {
   id: string;
-  guildId: string;
   paypalEmail?: string;
   paypalMeUsername?: string;
   currency?: string;
@@ -49,16 +48,16 @@ export async function registerUser(params: {
   });
 }
 
-export async function getUser(userId: string, guildId: string) {
-  return apiRequest(`/api/users/${userId}/guild/${guildId}`);
+export async function getUser(userId: string) {
+  return apiRequest(`/api/users/${userId}`);
 }
 
-export async function updateUser(userId: string, guildId: string, params: {
+export async function updateUser(userId: string, params: {
   paypalEmail?: string;
   paypalMeUsername?: string;
   currency?: string;
 }) {
-  return apiRequest(`/api/users/${userId}/guild/${guildId}`, {
+  return apiRequest(`/api/users/${userId}`, {
     method: "PATCH",
     body: JSON.stringify(params)
   });
@@ -151,7 +150,6 @@ export async function deleteInvoices(guildId: string, userId: string, status?: s
 
 export async function createTemplate(params: {
   userId: string;
-  guildId: string;
   name: string;
   amount: number;
   currency: string;
@@ -163,12 +161,12 @@ export async function createTemplate(params: {
   });
 }
 
-export async function listTemplates(guildId: string, userId: string) {
-  return apiRequest(`/api/templates/guild/${guildId}/user/${userId}`);
+export async function listTemplates(userId: string) {
+  return apiRequest(`/api/templates/user/${userId}`);
 }
 
-export async function getTemplateByName(guildId: string, userId: string, name: string) {
-  return apiRequest(`/api/templates/guild/${guildId}/user/${userId}/name/${encodeURIComponent(name)}`);
+export async function getTemplateByName(userId: string, name: string) {
+  return apiRequest(`/api/templates/user/${userId}/name/${encodeURIComponent(name)}`);
 }
 
 export async function deleteTemplate(templateId: string) {

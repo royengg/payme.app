@@ -12,7 +12,6 @@ export const createInvoiceSchema = z.object({
 
 export const createTemplateSchema = z.object({
   userId: z.string().min(1, "User ID is required"),
-  guildId: z.string().min(1, "Guild ID is required"),
   name: z.string().min(1, "Name is required").max(100, "Name too long"),
   amount: z.number().positive("Amount must be positive").max(1000000, "Amount too large"),
   currency: z.string().length(3, "Currency must be a 3-letter code").default("USD"),
@@ -21,7 +20,6 @@ export const createTemplateSchema = z.object({
 
 export const registerUserSchema = z.object({
   id: z.string().min(1, "User ID is required"),
-  guildId: z.string().min(1, "Guild ID is required"),
   email: z.string().email("Invalid email format").optional(),
   paypalEmail: z.string().email("Invalid PayPal email format").optional(),
   paypalMeUsername: z.string().min(1).max(50).regex(/^[a-zA-Z0-9]+$/, "Username can only contain letters and numbers").optional(),

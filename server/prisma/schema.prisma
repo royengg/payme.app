@@ -13,27 +13,21 @@ model Guild {
   webhookUrl String?   
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
-  users     User[]
   invoices  Invoice[]
-  templates Template[]
   clients   Client[]
 }
 
 model User {
-  id          String     @id 
-  email       String?
-  paypalEmail String?    
+  id               String     @id 
+  email            String?
+  paypalEmail      String?    
   paypalMeUsername String?  
-  currency    String     @default("USD") 
-  guildId     String
-  guild       Guild      @relation(fields: [guildId], references: [id], onDelete: Cascade)
-  invoices    Invoice[]
-  templates   Template[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-
-  @@unique([id, guildId])
-  clients     Client[]
+  currency         String     @default("USD") 
+  invoices         Invoice[]
+  templates        Template[]
+  clients          Client[]
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 }
 
 model Client {
@@ -84,12 +78,10 @@ model Template {
   description String
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  guildId     String
-  guild       Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([name, userId, guildId])
+  @@unique([name, userId])
   @@index([userId])
 }
 

@@ -47,7 +47,7 @@ export const paylinkCommand = {
     const currency = interaction.options.getString("currency")?.toUpperCase() || "USD";
     const client = interaction.options.getUser("client");
 
-    const userRes = await getUser(interaction.user.id, interaction.guildId!);
+    const userRes = await getUser(interaction.user.id);
     if (userRes.error || !userRes.data) {
       return interaction.editReply({
         content: "❌ You need to set up PayMe first. Use `/setup paypal` to get started."

@@ -11,10 +11,10 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: formatZodError(validation.error) });
     }
 
-    const { id, guildId, email, paypalEmail, paypalMeUsername, currency } = validation.data;
+    const { id, email, paypalEmail, paypalMeUsername, currency } = validation.data;
 
     const user = await prisma.user.upsert({
-      where: { id_guildId: { id, guildId } },
+      where: { id },
       update: {
         email: email || undefined,
         paypalEmail: paypalEmail || undefined,
@@ -23,7 +23,6 @@ router.post("/", async (req, res) => {
       },
       create: {
         id,
-        guildId,
         email,
         paypalEmail,
         paypalMeUsername,
@@ -38,12 +37,12 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/:id/guild/:guildId", async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
-    const { id, guildId } = req.params;
+    const { id } = req.params;
 
     const user = await prisma.user.findUnique({
-      where: { id_guildId: { id, guildId } }
+      where: { id }
     });
 
     if (!user) {
@@ -57,9 +56,9 @@ router.get("/:id/guild/:guildId", async (req, res) => {
   }
 });
 
-router.patch("/:id/guild/:guildId", async (req, res) => {
+router.patch("/:id", async (req, res) => {
   try {
-    const { id, guildId } = req.params;
+    const { id } = req.params;
     
     const validation = updateUserSchema.safeParse(req.body);
     if (!validation.success) {
@@ -69,7 +68,7 @@ router.patch("/:id/guild/:guildId", async (req, res) => {
     const { email, paypalEmail, paypalMeUsername, currency } = validation.data;
 
     const user = await prisma.user.update({
-      where: { id_guildId: { id, guildId } },
+      where: { id },
       data: {
         email: email || undefined,
         paypalEmail: paypalEmail || undefined,

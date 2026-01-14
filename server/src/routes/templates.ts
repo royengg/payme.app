@@ -12,12 +12,11 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: formatZodError(validation.error) });
     }
 
-    const { userId, guildId, name, amount, currency, description } = validation.data;
+    const { userId, name, amount, currency, description } = validation.data;
 
     const template = await prisma.template.create({
       data: {
         userId,
-        guildId,
         name,
         amount,
         currency: currency || "USD",
@@ -35,12 +34,12 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/guild/:guildId/user/:userId", async (req, res) => {
+router.get("/user/:userId", async (req, res) => {
   try {
-    const { guildId, userId } = req.params;
+    const { userId } = req.params;
 
     const templates = await prisma.template.findMany({
-      where: { guildId, userId },
+      where: { userId },
       orderBy: { createdAt: "desc" }
     });
 
@@ -51,12 +50,12 @@ router.get("/guild/:guildId/user/:userId", async (req, res) => {
   }
 });
 
-router.get("/guild/:guildId/user/:userId/name/:name", async (req, res) => {
+router.get("/user/:userId/name/:name", async (req, res) => {
   try {
-    const { guildId, userId, name } = req.params;
+    const { userId, name } = req.params;
 
     const template = await prisma.template.findUnique({
-      where: { name_userId_guildId: { name, userId, guildId } }
+      where: { name_userId: { name, userId } }
     });
 
     if (!template) {

@@ -102,7 +102,6 @@ async function handlePaypal(interaction: ChatInputCommandInteraction) {
 
   const result = await registerUser({
     id: interaction.user.id,
-    guildId: interaction.guildId!,
     paypalEmail: email
   });
 
@@ -142,7 +141,6 @@ async function handleCurrency(interaction: ChatInputCommandInteraction) {
 
   const result = await registerUser({
     id: interaction.user.id,
-    guildId: interaction.guildId!,
     currency
   });
 
@@ -179,7 +177,6 @@ async function handlePaypalMe(interaction: ChatInputCommandInteraction) {
 
   const result = await registerUser({
     id: interaction.user.id,
-    guildId: interaction.guildId!,
     paypalMeUsername: username
   });
 
@@ -272,7 +269,7 @@ async function handleWebhook(interaction: ChatInputCommandInteraction) {
 async function handleStatus(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply({ flags: ["Ephemeral"] });
 
-  const userRes = await getUser(interaction.user.id, interaction.guildId!);
+  const userRes = await getUser(interaction.user.id);
 
   const embed = new EmbedBuilder()
     .setTitle("⚙️ Your PayMe Configuration")

@@ -69,7 +69,7 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
   const email = interaction.options.getString("email", true);
   const name = interaction.options.getString("name", true);
 
-  const userRes = await getUser(interaction.user.id, interaction.guildId!);
+  const userRes = await getUser(interaction.user.id);
   if (userRes.error || !userRes.data) {
     return interaction.editReply({
       content: "❌ You need to set up PayMe first. Use `/setup paypal` command."

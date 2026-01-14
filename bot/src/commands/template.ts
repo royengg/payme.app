@@ -116,7 +116,6 @@ async function handleCreate(interaction: ChatInputCommandInteraction) {
 
   const result = await createTemplate({
     userId: interaction.user.id,
-    guildId: interaction.guildId!,
     name,
     amount,
     currency: currency.toUpperCase(),
@@ -148,7 +147,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction) {
 async function handleList(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply({ flags: ["Ephemeral"] });
 
-  const result = await listTemplates(interaction.guildId!, interaction.user.id);
+  const result = await listTemplates(interaction.user.id);
 
   if (result.error) {
     return interaction.editReply({
@@ -193,7 +192,7 @@ async function handleUse(interaction: ChatInputCommandInteraction) {
   const clientEmail = interaction.options.getString("email");
   const amountOverride = interaction.options.getNumber("amount");
 
-  const userRes = await getUser(interaction.user.id, interaction.guildId!);
+  const userRes = await getUser(interaction.user.id);
   if (userRes.error || !userRes.data) {
     return interaction.editReply({
       content: "❌ You need to set up your PayPal email first. Use `/setup paypal` command."
@@ -201,7 +200,6 @@ async function handleUse(interaction: ChatInputCommandInteraction) {
   }
 
   const templateRes = await getTemplateByName(
-    interaction.guildId!, 
     interaction.user.id, 
     templateName
   );
@@ -280,7 +278,6 @@ async function handleDelete(interaction: ChatInputCommandInteraction) {
   const templateName = interaction.options.getString("name", true);
 
   const templateRes = await getTemplateByName(
-    interaction.guildId!, 
     interaction.user.id, 
     templateName
   );
