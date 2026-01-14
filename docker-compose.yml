@@ -8,7 +8,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - DATABASE_URL=${DATABASE_URL}
+      # - DATABASE_URL=${DATABASE_URL}
       - PAYPAL_CLIENT_ID=${PAYPAL_CLIENT_ID}
       - PAYPAL_CLIENT_SECRET=${PAYPAL_CLIENT_SECRET}
       - PAYPAL_MODE=${PAYPAL_MODE:-live}
@@ -29,7 +29,7 @@ services:
     environment:
       - NODE_ENV=production
       - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      # - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
       - API_URL=http://server:3000
       - API_SECRET=${API_SECRET}
     depends_on:
