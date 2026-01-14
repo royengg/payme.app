@@ -15,7 +15,7 @@ router.post("/", async (req, res) => {
     const { userId, guildId, clientDiscordId, clientEmail, amount, currency, description } = validation.data;
 
     const user = await prisma.user.findUnique({
-      where: { id_guildId: { id: userId, guildId } }
+      where: { id: userId }
     });
 
     if (!user?.paypalEmail) {
