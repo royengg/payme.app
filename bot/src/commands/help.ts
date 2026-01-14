@@ -69,6 +69,6 @@ export const helpCommand = {
       .setFooter({ text: "PayMe • Discord Invoicing Made Easy" })
       .setTimestamp();
 
-    await interaction.reply({ embeds: [embed], flags: ["Ephemeral"] });
+    await interaction.reply({ embeds: [embed] });
   }
 };
