@@ -1,17 +1,9 @@
 import { Router } from "express";
 import { prisma } from "../index";
 import { z } from "zod";
-import { formatZodError } from "../validators/schemas";
+import { formatZodError, clientSchema } from "../validators/schemas";
 
 const router = Router();
-
-const clientSchema = z.object({
-  userId: z.string(),
-  guildId: z.string(),
-  discordId: z.string(),
-  name: z.string().min(1),
-  email: z.string().email()
-});
 
 router.post("/", async (req, res) => {
   try {

@@ -129,9 +129,15 @@ router.post("/", async (req, res) => {
 
         } catch (sendError: any) {
           console.error("PayPal send error:", sendError);
+          let warning = "Invoice created but email sending failed. Share the link manually.";
+
+          if (sendError.message && sendError.message.includes("INR_FOREIGN_CURRENCY_BLOCKED")) {
+            warning = "PayPal India Limitation: Sending invoices to other Indian accounts is blocked. Share the link manually for international payments.";
+          }
+
           return res.status(201).json({ 
             ...updatedInvoice, 
-            warning: "Invoice created but email sending failed. Share the link manually." 
+            warning
           });
         }
 

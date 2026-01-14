@@ -45,6 +45,14 @@ export const updateGuildWebhookSchema = z.object({
   webhookUrl: z.string().url("Invalid webhook URL").startsWith("https://discord.com/api/webhooks/", "Must be a Discord webhook URL")
 });
 
+export const clientSchema = z.object({
+  userId: z.string().min(1, "User ID is required"),
+  guildId: z.string().min(1, "Guild ID is required"),
+  discordId: z.string().min(1, "Discord ID is required"),
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address")
+});
+
 export function formatZodError(error: z.ZodError): string {
   return error.issues.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ");
 }
