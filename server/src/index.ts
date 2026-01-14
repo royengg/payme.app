@@ -120,6 +120,7 @@ async function autoCancelOverdueInvoices() {
 }
 
 setInterval(autoCancelOverdueInvoices, ONE_DAY_MS);
-setTimeout(autoCancelOverdueInvoices, 10000);
+// Disabled: runs on first daily interval, not immediately on startup
+// setTimeout(autoCancelOverdueInvoices, 10000);
 
 export default app;
