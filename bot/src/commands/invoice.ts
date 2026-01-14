@@ -20,8 +20,8 @@ export const invoiceCommand = {
         .addUserOption(option =>
           option
             .setName("client")
-            .setDescription("The Discord user to invoice")
-            .setRequired(true)
+            .setDescription("The Discord user to invoice (optional)")
+            .setRequired(false)
         )
         .addNumberOption(option =>
           option
@@ -211,11 +211,17 @@ async function handleDeleteAll(interaction: any) {
 async function handleCreate(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply({ flags: ["Ephemeral"] });
 
-  const client = interaction.options.getUser("client", true);
+  const client = interaction.options.getUser("client");
   const amount = interaction.options.getNumber("amount", true);
   const description = interaction.options.getString("description", true);
   const currency = interaction.options.getString("currency") || "USD";
   const clientEmail = interaction.options.getString("email");
+
+  if (!client && !clientEmail) {
+    return interaction.editReply({
+      content: "❌ You must provide either a Discord user or an email address for the client."
+    });
+  }
 
   const userRes = await getUser(interaction.user.id);
   if (userRes.error || !userRes.data) {
@@ -227,7 +233,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction) {
   const result = await createInvoice({
     userId: interaction.user.id,
     guildId: interaction.guildId!,
-    clientDiscordId: client.id,
+    clientDiscordId: client?.id || "external",
     clientEmail: clientEmail || undefined,
     amount,
     currency: currency.toUpperCase(),
@@ -249,7 +255,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction) {
       { name: "Invoice ID", value: `\`${invoice.id}\``, inline: true },
       { name: "Amount", value: `**${invoice.currency} ${amount.toFixed(2)}**`, inline: true },
       { name: "Status", value: invoice.status, inline: true },
-      { name: "Client", value: `<@${client.id}>`, inline: true },
+      { name: "Client", value: client ? `<@${client.id}>` : clientEmail || "External", inline: true },
       { name: "Description", value: description, inline: false }
     )
     .setTimestamp();
@@ -261,23 +267,27 @@ async function handleCreate(interaction: ChatInputCommandInteraction) {
       inline: false 
     });
 
-    try {
-      const dmEmbed = new EmbedBuilder()
-        .setTitle("💳 You've Received an Invoice")
-        .setColor(0x5865f2)
-        .setDescription(`${interaction.user.username} has sent you an invoice.`)
-        .addFields(
-          { name: "Amount", value: `**${invoice.currency} ${amount.toFixed(2)}**`, inline: true },
-          { name: "Description", value: description, inline: false },
-          { name: "Payment Link", value: `[Click here to pay](${invoice.paypalLink})`, inline: false }
-        )
-        .setFooter({ text: `Invoice ID: ${invoice.id}` })
-        .setTimestamp();
+    if (client) {
+      try {
+        const dmEmbed = new EmbedBuilder()
+          .setTitle("💳 You've Received an Invoice")
+          .setColor(0x5865f2)
+          .setDescription(`${interaction.user.username} has sent you an invoice.`)
+          .addFields(
+            { name: "Amount", value: `**${invoice.currency} ${amount.toFixed(2)}**`, inline: true },
+            { name: "Description", value: description, inline: false },
+            { name: "Payment Link", value: `[Click here to pay](${invoice.paypalLink})`, inline: false }
+          )
+          .setFooter({ text: `Invoice ID: ${invoice.id}` })
+          .setTimestamp();
 
-      await client.send({ embeds: [dmEmbed] });
-      embed.addFields({ name: "✅ DM Sent", value: `Invoice sent to ${client.username}`, inline: false });
-    } catch {
-      embed.addFields({ name: "⚠️ DM Failed", value: "Couldn't DM client. Share the payment link manually.", inline: false });
+        await client.send({ embeds: [dmEmbed] });
+        embed.addFields({ name: "✅ DM Sent", value: `Invoice sent to ${client.username}`, inline: false });
+      } catch {
+        embed.addFields({ name: "⚠️ DM Failed", value: "Couldn't DM client. Share the payment link manually.", inline: false });
+      }
+    } else {
+      embed.addFields({ name: "📧 Email Invoice", value: "Invoice sent to PayPal email.", inline: false });
     }
   } else if (invoice.warning) {
     embed.setColor(0xffaa00);
