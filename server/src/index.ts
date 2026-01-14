@@ -9,6 +9,7 @@ import webhookRoutes from "./routes/webhooks";
 import userRoutes from "./routes/users";
 import guildRoutes from "./routes/guilds";
 import clientRoutes from "./routes/clients";
+import statsRoutes from "./routes/stats";
 import { requireApiKey } from "./middleware/auth";
 import { paypalService } from "./services/paypal";
 import "dotenv/config";
@@ -55,6 +56,7 @@ app.use("/api/templates", requireApiKey, templateRoutes);
 app.use("/api/users", requireApiKey, userRoutes);
 app.use("/api/guilds", requireApiKey, guildRoutes);
 app.use("/api/clients", requireApiKey, clientRoutes);
+app.use("/api/stats", requireApiKey, statsRoutes);
 app.use("/webhooks", webhookRoutes);
 
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

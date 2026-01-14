@@ -201,3 +201,22 @@ export async function deleteClient(guildId: string, userId: string, clientId: st
     method: "DELETE"
   });
 }
+
+export interface StatsData {
+  total: number;
+  draft: number;
+  sent: number;
+  paid: number;
+  cancelled: number;
+  totalInvoiced: number;
+  totalPaid: number;
+  totalPending: number;
+  currencies: Record<string, { invoiced: number; paid: number; pending: number }>;
+}
+
+export async function getStats(userId: string, guildId?: string) {
+  const url = guildId 
+    ? `/api/stats/user/${userId}?guildId=${guildId}`
+    : `/api/stats/user/${userId}`;
+  return apiRequest<StatsData>(url);
+}

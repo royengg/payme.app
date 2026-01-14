@@ -4,6 +4,8 @@ import { templateCommand } from "./commands/template";
 import { setupCommand } from "./commands/setup";
 import { paylinkCommand } from "./commands/paylink";
 import { clientCommand } from "./commands/client";
+import { statsCommand } from "./commands/stats";
+import { helpCommand } from "./commands/help";
 
 declare module "discord.js" {
   interface Client {
@@ -20,7 +22,7 @@ const client = new Client({
 
 client.commands = new Collection();
 
-const commands = [invoiceCommand, templateCommand, setupCommand, paylinkCommand, clientCommand];
+const commands = [invoiceCommand, templateCommand, setupCommand, paylinkCommand, clientCommand, statsCommand, helpCommand];
 commands.forEach(cmd => {
   client.commands.set(cmd.data.name, cmd);
 });
