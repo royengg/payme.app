@@ -17,10 +17,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "bun", "-e", "fetch('http://localhost:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   bot:
     build:
@@ -34,5 +34,6 @@ services:
       - API_SECRET=${API_SECRET}
     depends_on:
       server:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
+
