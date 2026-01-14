@@ -4,9 +4,10 @@ import {
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
-  ButtonStyle
+  ButtonStyle,
+  Client
 } from "discord.js";
-import { createInvoice, listInvoices, cancelInvoice, getUser } from "../utils/api";
+import { createInvoice, listInvoices, cancelInvoice, deleteInvoice, remindInvoice, getUser } from "../utils/api";
 
 export const invoiceCommand = {
   data: new SlashCommandBuilder()
@@ -77,6 +78,28 @@ export const invoiceCommand = {
             .setDescription("The invoice ID to cancel")
             .setRequired(true)
         )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName("delete")
+        .setDescription("Permanently delete an invoice")
+        .addStringOption(option =>
+          option
+            .setName("invoice_id")
+            .setDescription("The invoice ID to delete")
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName("remind")
+        .setDescription("Send a payment reminder for an invoice")
+        .addStringOption(option =>
+          option
+            .setName("invoice_id")
+            .setDescription("The invoice ID to send reminder for")
+            .setRequired(true)
+        )
     ),
 
   async execute(interaction: ChatInputCommandInteraction | any) {
@@ -95,6 +118,10 @@ export const invoiceCommand = {
       await handleList(interaction);
     } else if (subcommand === "cancel") {
       await handleCancel(interaction);
+    } else if (subcommand === "delete") {
+      await handleDelete(interaction);
+    } else if (subcommand === "remind") {
+      await handleRemind(interaction);
     }
   }
 };
@@ -355,3 +382,83 @@ async function handleCancel(interaction: ChatInputCommandInteraction) {
 
   await interaction.editReply({ embeds: [embed] });
 }
+
+async function handleDelete(interaction: ChatInputCommandInteraction) {
+  await interaction.deferReply({ flags: ["Ephemeral"] });
+
+  const invoiceId = interaction.options.getString("invoice_id", true);
+
+  const result = await deleteInvoice(invoiceId);
+
+  if (result.error) {
+    return interaction.editReply({
+      content: `❌ Failed to delete invoice: ${result.error}`
+    });
+  }
+
+  const embed = new EmbedBuilder()
+    .setTitle("🗑️ Invoice Deleted")
+    .setColor(0xff0000)
+    .setDescription(`Invoice \`${invoiceId}\` has been permanently deleted.`)
+    .setTimestamp();
+
+  await interaction.editReply({ embeds: [embed] });
+}
+
+async function handleRemind(interaction: ChatInputCommandInteraction) {
+  await interaction.deferReply({ flags: ["Ephemeral"] });
+
+  const invoiceId = interaction.options.getString("invoice_id", true);
+
+  const result = await remindInvoice(invoiceId);
+
+  if (result.error) {
+    return interaction.editReply({
+      content: `❌ Failed to send reminder: ${result.error}`
+    });
+  }
+
+  const data = result.data!;
+
+  const embed = new EmbedBuilder()
+    .setTitle("📧 Payment Reminder Sent")
+    .setColor(0x5865f2)
+    .setDescription(`A payment reminder has been sent for invoice \`${invoiceId}\`.`)
+    .addFields(
+      { name: "Amount", value: `**${data.currency} ${Number(data.amount).toFixed(2)}**`, inline: true },
+      { name: "Client", value: `<@${data.clientDiscordId}>`, inline: true }
+    )
+    .setTimestamp();
+
+  await interaction.editReply({ embeds: [embed] });
+
+  if (data.clientDiscordId && data.paypalLink) {
+    try {
+      const client = await interaction.client.users.fetch(data.clientDiscordId);
+      const dmEmbed = new EmbedBuilder()
+        .setTitle("💳 Payment Reminder")
+        .setColor(0xffaa00)
+        .setDescription(`${interaction.user.username} has sent you a payment reminder.`)
+        .addFields(
+          { name: "Amount", value: `**${data.currency} ${Number(data.amount).toFixed(2)}**`, inline: true },
+          { name: "Description", value: data.description, inline: false },
+          { name: "Payment Link", value: `[Click here to pay](${data.paypalLink})`, inline: false }
+        )
+        .setFooter({ text: `Invoice ID: ${invoiceId}` })
+        .setTimestamp();
+
+      await client.send({ embeds: [dmEmbed] });
+
+      await interaction.followUp({
+        content: `✅ Discord DM also sent to <@${data.clientDiscordId}>`,
+        flags: ["Ephemeral"]
+      });
+    } catch {
+      await interaction.followUp({
+        content: `⚠️ PayPal reminder sent, but couldn't DM <@${data.clientDiscordId}>`,
+        flags: ["Ephemeral"]
+      });
+    }
+  }
+}
+

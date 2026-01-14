@@ -10,10 +10,12 @@ async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   try {
+    const apiSecret = process.env.API_SECRET;
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
+        ...(apiSecret && { "Authorization": `Bearer ${apiSecret}` }),
         ...options.headers
       }
     });
@@ -112,6 +114,25 @@ export async function getInvoice(invoiceId: string) {
 export async function cancelInvoice(invoiceId: string) {
   return apiRequest(`/api/invoices/${invoiceId}/cancel`, {
     method: "PATCH"
+  });
+}
+
+export async function deleteInvoice(invoiceId: string) {
+  return apiRequest(`/api/invoices/${invoiceId}`, {
+    method: "DELETE"
+  });
+}
+
+export async function remindInvoice(invoiceId: string) {
+  return apiRequest<{
+    success: boolean;
+    clientDiscordId: string;
+    paypalLink: string;
+    amount: number;
+    currency: string;
+    description: string;
+  }>(`/api/invoices/${invoiceId}/remind`, {
+    method: "POST"
   });
 }
 

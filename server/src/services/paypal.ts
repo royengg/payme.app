@@ -15,6 +15,7 @@ interface PayPalInvoice {
 
 class PayPalService {
   private baseUrl: string;
+  private webUrl: string;
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
 
@@ -23,6 +24,38 @@ class PayPalService {
     this.baseUrl = mode === "live" 
       ? "https://api-m.paypal.com" 
       : "https://api-m.sandbox.paypal.com";
+    this.webUrl = mode === "live"
+      ? "https://www.paypal.com"
+      : "https://www.sandbox.paypal.com";
+  }
+
+  private async fetchWithRetry(
+    url: string,
+    options: RequestInit,
+    retries = 3
+  ): Promise<Response> {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const response = await fetch(url, options);
+        if (response.ok || response.status < 500) return response;
+        console.warn(`PayPal API returned ${response.status}, retrying (${i + 1}/${retries})...`);
+      } catch (error) {
+        if (i === retries - 1) throw error;
+        console.warn(`PayPal API request failed, retrying (${i + 1}/${retries})...`);
+      }
+      await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
+    }
+    throw new Error("PayPal API: Max retries exceeded");
+  }
+
+  async healthCheck(): Promise<{ ok: boolean; latency: number }> {
+    const start = Date.now();
+    try {
+      await this.getAccessToken();
+      return { ok: true, latency: Date.now() - start };
+    } catch {
+      return { ok: false, latency: Date.now() - start };
+    }
   }
 
   private async getAccessToken(): Promise<string> {
@@ -93,7 +126,7 @@ class PayPalService {
       ]
     };
 
-    const response = await fetch(`${this.baseUrl}/v2/invoicing/invoices`, {
+    const response = await this.fetchWithRetry(`${this.baseUrl}/v2/invoicing/invoices`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -122,7 +155,7 @@ class PayPalService {
     try {
       const details = await this.getInvoice(id);
       const payerLink = details.detail?.metadata?.recipient_view_url 
-        || `https://www.sandbox.paypal.com/invoice/p/${id}`;
+        || `${this.webUrl}/invoice/p/${id}`;
       
       return {
         id,
@@ -133,7 +166,7 @@ class PayPalService {
        console.error("Failed to fetch invoice details:", error);
        return {
          id,
-         href: `https://www.sandbox.paypal.com/invoice/p/${id}`,
+         href: `${this.webUrl}/invoice/p/${id}`,
          status: "DRAFT"
        };
     }
@@ -142,7 +175,7 @@ class PayPalService {
   async sendInvoice(paypalInvoiceId: string): Promise<void> {
     const token = await this.getAccessToken();
 
-    const response = await fetch(
+    const response = await this.fetchWithRetry(
       `${this.baseUrl}/v2/invoicing/invoices/${paypalInvoiceId}/send`,
       {
         method: "POST",
@@ -231,6 +264,32 @@ class PayPalService {
     }
 
     return response.json();
+  }
+
+  async sendReminder(paypalInvoiceId: string): Promise<void> {
+    const token = await this.getAccessToken();
+
+    const response = await this.fetchWithRetry(
+      `${this.baseUrl}/v2/invoicing/invoices/${paypalInvoiceId}/remind`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          subject: "Payment Reminder",
+          note: "This is a friendly reminder that your invoice is awaiting payment.",
+          send_to_invoicer: false,
+          send_to_recipient: true
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`PayPal send reminder failed: ${error}`);
+    }
   }
 }
 

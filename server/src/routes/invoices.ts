@@ -224,6 +224,75 @@ router.patch("/:id/cancel", async (req, res) => {
   }
 });
 
+router.delete("/:id", async (req, res) => {
+  try {
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: req.params.id }
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ error: "Invoice not found" });
+    }
+
+    if (invoice.paypalInvoiceId) {
+      try {
+        if (invoice.status === "DRAFT") {
+          await paypalService.deleteInvoice(invoice.paypalInvoiceId);
+        } else if (invoice.status === "SENT") {
+          await paypalService.cancelInvoice(invoice.paypalInvoiceId);
+        }
+      } catch (paypalError) {
+        console.error("PayPal delete/cancel error:", paypalError);
+      }
+    }
+
+    await prisma.invoice.delete({
+      where: { id: req.params.id }
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete invoice error:", error);
+    res.status(500).json({ error: "Failed to delete invoice" });
+  }
+});
+
+router.post("/:id/remind", async (req, res) => {
+  try {
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: req.params.id }
+    });
+
+    if (!invoice) {
+      return res.status(404).json({ error: "Invoice not found" });
+    }
+
+    if (invoice.status !== "SENT") {
+      return res.status(400).json({ error: "Can only send reminders for sent invoices" });
+    }
+
+    if (invoice.paypalInvoiceId) {
+      try {
+        await paypalService.sendReminder(invoice.paypalInvoiceId);
+      } catch (paypalError) {
+        console.error("PayPal reminder error:", paypalError);
+        return res.status(500).json({ error: "Failed to send PayPal reminder" });
+      }
+    }
+
+    res.json({
+      success: true,
+      clientDiscordId: invoice.clientDiscordId,
+      paypalLink: invoice.paypalLink,
+      amount: invoice.amount,
+      currency: invoice.currency,
+      description: invoice.description
+    });
+  } catch (error) {
+    console.error("Remind invoice error:", error);
+    res.status(500).json({ error: "Failed to send reminder" });
+  }
+});
 
 router.delete("/", async (req, res) => {
   try {
@@ -271,3 +340,4 @@ router.delete("/", async (req, res) => {
 });
 
 export default router;
+
