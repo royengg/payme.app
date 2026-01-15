@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { prisma } from "../index";
-import { z } from "zod";
 import { formatZodError, clientSchema } from "../validators/schemas";
 
 const router = Router();

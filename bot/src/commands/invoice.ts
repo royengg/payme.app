@@ -5,7 +5,6 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  Client
 } from "discord.js";
 import { createInvoice, listInvoices, cancelInvoice, deleteInvoice, remindInvoice, getUser } from "../utils/api";
 

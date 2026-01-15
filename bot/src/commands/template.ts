@@ -1,10 +1,7 @@
 import { 
   SlashCommandBuilder, 
   ChatInputCommandInteraction,
-  EmbedBuilder,
-  ActionRowBuilder,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder
+  EmbedBuilder
 } from "discord.js";
 import { createTemplate, listTemplates, deleteTemplate, getTemplateByName, createInvoice, getUser } from "../utils/api";
 

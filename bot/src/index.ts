@@ -28,20 +28,20 @@ commands.forEach(cmd => {
 });
 
 client.once("clientReady", async () => {
-  console.log(`🤖 Logged in as ${client.user?.tag}`);
-  console.log(`📊 Serving ${client.guilds.cache.size} server(s)`);
+  console.log(`Logged in as ${client.user?.tag}`);
+  console.log(`Serving ${client.guilds.cache.size} server(s)`);
   
   const rest = new REST().setToken(process.env.DISCORD_TOKEN!);
   
   try {
-    console.log("🔄 Registering slash commands...");
+    console.log("Registering slash commands...");
     
     await rest.put(
       Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
       { body: commands.map(cmd => cmd.data.toJSON()) }
     );
     
-    console.log("✅ Slash commands registered successfully!");
+    console.log("Slash commands registered successfully!");
   } catch (error) {
     console.error("Failed to register commands:", error);
   }
@@ -74,7 +74,7 @@ client.on("interactionCreate", async (interaction) => {
       } catch (error) {
         console.error("Button handling error:", error);
         if (!interaction.replied && !interaction.deferred) {
-          await interaction.reply({ content: "❌ Button interaction failed.", ephemeral: true });
+          await interaction.reply({ content: "Button interaction failed.", ephemeral: true });
         }
       }
     }
@@ -97,7 +97,7 @@ client.on("guildCreate", async (guild) => {
 
 const token = process.env.DISCORD_TOKEN;
 if (!token) {
-  console.error("❌ DISCORD_TOKEN is not set in environment variables");
+  console.error("DISCORD_TOKEN is not set in environment variables");
   process.exit(1);
 }
 
