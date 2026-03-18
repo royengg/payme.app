@@ -4,14 +4,14 @@
 
 PayMe helps you create professional PayPal invoices for your clients without leaving your Discord server. Your clients receive an invoice link via email or DM, and you get notified instantly when they pay.
 
-## ✨ Features
+## Features
 
 - **Create Invoices**: Generate PayPal invoices with a single command.
 - **Templates**: Save your frequent services (e.g., "Logo Design", "Server Setup") to reuse later.
 - **Multi-Currency**: Support for USD, EUR, GBP, and more.
 - **Instant Notifications**: Get alerted in your Discord channel the moment an invoice is paid.
 
-## 🚀 How to Use
+## How to Use
 
 ### 1. Setup
 Before you start, make sure you have a **PayPal Business Account**.
@@ -63,7 +63,7 @@ Save time on recurring jobs.
 - `/invoice list` - See all your pending and paid invoices.
 - `/invoice cancel` - Cancel an unpaid invoice.
 
-## ❓ Frequently Asked Questions
+## Frequently Asked Questions
 
 **Q: Do my clients need to use this bot?**
 A: No! Your clients just need a PayPal account (or a credit card) to pay the invoice link they receive in their email.
